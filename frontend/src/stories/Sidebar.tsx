@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, user }) => {
           {sections.map((item, index) => (
             <a
               key={index}
-              href="#"
+              href={`/${item.name}`}
               className="flex items-center p-2 text-gray-700 hover:bg-gray-100 rounded transition"
             >
               <span className="mr-3">
@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, user }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 1v3M8.5 2.5l2 2M1 12h3m16 0h3m-9 7l2 2M6.5 21.5l2-2M21 12l2-2M6 9h12v6H6V9z" />
               </svg>
             </span>
-            <span>Settings</span>
+            <span>settings</span>
           </a>
         </nav>
       </div>

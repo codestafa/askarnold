@@ -17,6 +17,6 @@ export const Default: Story = {
       { name: "View Workouts", icon: "M15 12l-3-3m0 0l-3 3m3-3v12M5 12a7 7 0 0114 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4z" },
       { name: "Community", icon: "M3 5a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H9l-6 3V5z" },
     ],
-    user: { name: "John Doe" },
+    user: { name: "john doe" },
   },
 };
