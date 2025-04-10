@@ -1,21 +1,24 @@
+// src/index.ts
 import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import openAiRoutes from "./routes/openAiRoutes";
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Root route
 app.get("/", (req: Request, res: Response) => {
-  console.log("GET / request received"); // Debugging log
   res.status(200).send("Hello, TypeScript with Express!");
 });
 
+// Mount the AI assistant routes
+app.use("/", openAiRoutes);
+
 // Start Server
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}/`));
