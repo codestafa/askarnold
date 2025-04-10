@@ -2,14 +2,14 @@
 import { Request, Response } from "express";
 // Import our custom message type and helper functions from our model file
 import {
-  ChatCompletionRequestMessage,
   getChatResponse,
   getChatHistory,
   addMessage,
   getLastAssistantMessage,
   saveWorkoutPlan
 } from "../../models/openAiModel";
-import { SYSTEM_PROMPT } from "./config";
+import { SYSTEM_PROMPT } from "../../config/openai/config";
+import { ChatCompletionRequestMessage } from '../../../types/openai'
 
 // Handler for the /ask endpoint
 export async function askOpenAi(req: Request, res: Response): Promise<void> {

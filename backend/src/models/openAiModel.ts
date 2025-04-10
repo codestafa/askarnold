@@ -1,23 +1,13 @@
 // src/models/openAiModel.ts
 import OpenAI from "openai";
-import knex from "../config/db";
+import knex from "../db/db";
+import { openai, MODEL_NAME } from '../config/openai/config';
+import { ChatCompletionRequestMessage } from '../../types/openai'
 
-// Define our own type for chat messages
-export type ChatCompletionRequestMessage = {
-  role: "system" | "user" | "assistant";
-  content: string;
-};
-
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  throw new Error("OPENAI_API_KEY not set in environment variables");
+if (!openai) {
+  throw new Error("Open AI instance not initialized...");
 }
 
-const openai = new OpenAI({
-  apiKey,
-});
-
-const MODEL_NAME = "gpt-3.5-turbo"; // Change to "gpt-4" if available
 
 export async function getChatResponse(messages: ChatCompletionRequestMessage[]): Promise<string> {
   try {
@@ -32,8 +22,6 @@ export async function getChatResponse(messages: ChatCompletionRequestMessage[]):
     throw err;
   }
 }
-
-// ----- Database (Knex) Helper Functions -----
 
 // Retrieve the conversation history for a user.
 export async function getChatHistory(userId: number): Promise<ChatCompletionRequestMessage[]> {
