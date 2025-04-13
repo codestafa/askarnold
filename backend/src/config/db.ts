@@ -19,8 +19,6 @@ export async function saveOrFetchUser(profile: any) {
     email: profile.email,
     picture: profile.picture,
     username: profile.displayName?.toLowerCase().replace(/\s+/g, '') || null,
-    bio: 'Fitness enthusiast',
-    location: 'Chico, CA',
   })
   .returning('*');
 
