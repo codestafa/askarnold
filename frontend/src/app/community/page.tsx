@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../../stories/Sidebar";
+import {User} from "../../types/users"
+import Image from "next/image"
 
 export default function CommunityPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -29,26 +31,23 @@ export default function CommunityPage() {
   if (loading || !user) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar sections={sections} user={{ name: user.name, image: user.picture }} />
-
-      <div className="flex flex-1 justify-center items-center p-6">
-        <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-lg flex flex-col items-center">
-          <img
-            src={user.picture || "https://via.placeholder.com/150"}
-            alt="User avatar"
-            className="rounded-full w-24 h-24 object-cover border-4 border-gray-300"
-          />
-          <h2 className="text-2xl font-bold mt-4 text-gray-900">{user.name}</h2>
-          {user.username && (
-            <p className="text-gray-500">@{user.username}</p>
-          )}
-          <p className="text-gray-500 text-center mt-2">{user.bio}</p>
-          <p className="text-gray-400 text-sm mt-1">{user.location}</p>
-          <p className="text-gray-500 mt-2">{user.email}</p>
-          <p className="text-gray-500 text-center mt-4">Welcome to the community!</p>
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar sections={sections} user={{ name: user.name, image: user.picture }} />
+        <div className="flex flex-1 justify-center items-center p-6">
+          <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-lg flex flex-col items-center">
+            {user.picture && (
+              <Image
+                src={user.picture}
+                alt={user.name}
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            )}
+            <p className="text-gray-500 mt-2">{user.email}</p>
+            <p className="text-gray-500 text-center mt-4">Welcome to the community!</p>
+          </div>
         </div>
       </div>
-    </div>
   );
 }

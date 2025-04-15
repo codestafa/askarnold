@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '../stories/Sidebar';
+import { User } from '../types/users'
 
 export default function HomePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const sections = [
@@ -36,7 +37,7 @@ export default function HomePage() {
 
   return (
     <div className="flex">
-      <Sidebar sections={sections} user={{ name: user.displayName || user.name || "Unknown", image: user.picture }} />
+      <Sidebar sections={sections} user={{ name: user.username || user.name || "Unknown", image: user.picture }} />
       <main className="flex-1 p-6">
         <h1 className="text-2xl font-bold">Welcome to Ask Arny</h1>
         <p className="mt-2 text-gray-600">Select an option from the sidebar.</p>

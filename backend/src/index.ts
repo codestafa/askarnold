@@ -13,7 +13,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:3000", 
+  origin: "http://localhost:3001", 
   credentials: true,
   methods: ["GET", "POST"], 
 }));
@@ -44,11 +44,11 @@ app.get("/auth/google",
 
 app.get("/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:3000/login",
+    failureRedirect: "http://localhost:/login",
   }),
   (req, res) => {
     console.log("✅ Logged in user:", req.user);
-    res.redirect("http://localhost:3000/");
+    res.redirect("http://localhost:3001/");
   }
 );
 

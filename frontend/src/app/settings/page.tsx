@@ -3,15 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../../stories/Sidebar";
+import {User} from "../../types/users"
 
 export default function Settings() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>();
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [location, setLocation] = useState("");
-  const [bio, setBio] = useState("");
   const router = useRouter();
 
   const sections = [
@@ -41,8 +40,6 @@ export default function Settings() {
     if (user) {
       setName(user.name || "");
       setUsername(user.username || "");
-      setLocation(user.location || "");
-      setBio(user.bio || "");
     }
   }, [user]);
 
@@ -72,8 +69,6 @@ export default function Settings() {
           {user.username && (
             <p className="text-gray-500">@{user.username}</p>
           )}
-          <p className="text-gray-500 text-center mt-2">{user.bio}</p>
-          <p className="text-gray-400 text-sm mt-1">{user.location}</p>
           <p className="text-gray-500 mt-2">{user.email}</p>
           <div className="mt-6 flex gap-4 w-full">
           <button
@@ -110,20 +105,6 @@ export default function Settings() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <input
-              type="text"
-              placeholder="Location"
-              className="w-full mb-3 px-4 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-            <textarea
-              placeholder="Bio"
-              className="w-full mb-3 px-4 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-            />
-
             <div className="flex justify-end gap-2 mt-4">
               <button
                 className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"

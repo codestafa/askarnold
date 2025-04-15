@@ -17,7 +17,7 @@ export async function saveOrFetchUser(profile: any) {
     google_id: profile.id,
     name: profile.displayName,
     email: profile.email,
-    picture: profile.picture,
+    picture: profile.photos?.[0]?.value || null,
     username: profile.displayName?.toLowerCase().replace(/\s+/g, '') || null,
   })
   .returning('*');
