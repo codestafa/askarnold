@@ -2,3 +2,6 @@
 package-lock.json
 .env
 /dist
+.vscode/settings.json
+.DS_Store
+dist/
