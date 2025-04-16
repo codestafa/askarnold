@@ -1,25 +1,28 @@
-import { Knex } from "knex";
-import dotenv from "dotenv";
+import dotenv from 'dotenv'
+import path from 'path'
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
+
+import { Knex } from 'knex'
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    client: "pg",
+    client: 'pg',
     connection: {
       host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT) || 5432,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      port: Number(process.env.DB_PORT) || 5432,
     },
     migrations: {
-      directory: "../migrations",
+      directory: path.resolve(__dirname, '../../migrations'),
     },
     seeds: {
-      directory: "../seeds",
+      directory: path.resolve(__dirname, '../../seeds'),
     },
   },
-};
+}
 
-export default config;
+export default config
+module.exports = config
