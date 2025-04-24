@@ -1,97 +1,185 @@
-// src/controllers/OpenAi/OpenAiController.ts
 import { Request, Response } from "express";
-// Import our custom message type and helper functions from our model file
+import { getChatResponse, saveWorkoutPlan } from "../../models/openAiModel";
 import {
-  getChatResponse,
-  getChatHistory,
-  addMessage,
-  getLastAssistantMessage,
-  saveWorkoutPlan
-} from "../../models/openAiModel";
+  startConversation,
+  appendToConversation,
+  getConversationById,
+  getLastAssistantMessageInConversation,
+  linkWorkoutPlanToConversation,
+  getMostRecentConversationId,
+  endConversation,
+} from "../../models/conversationModel";
 import { SYSTEM_PROMPT } from "../../config/openai/config";
-import { ChatCompletionRequestMessage } from '../../../types/openai'
+import { ChatCompletionRequestMessage } from "../../../types/openai";
 
-// Handler for the /ask endpoint
-export async function askOpenAi(req: Request, res: Response): Promise<void> {
+const GOODBYE_KEYWORDS = [
+  "goodbye",
+  "bye",
+  "see you",
+  "talk to you later",
+  "later",
+  "cya",
+];
+const ENDING_KEYWORDS = ["end conversation", "let's end this conversation"];
+
+/**
+ * Fetch the user's most recent active conversation (if any).
+ */
+export async function getLastConversation(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
-    // Extract userId and message from request body
+    const userId = req.body.userId;
+    if (!userId) {
+      res.status(400).json({ error: "Missing userId in request body" });
+      return;
+    }
+
+    const conversationId = await getMostRecentConversationId(userId);
+    console.log(conversationId)
+    if (!conversationId) {
+      res.json({ conversationId: null, messages: [] });
+      return;
+    }
+
+    const conversation = await getConversationById(conversationId);
+    console.log(conversation)
+
+    // If they've explicitly ended it, treat as "no active"
+    if (conversation.ended_at) {
+      res.json({ conversationId: null, messages: [] });
+      return;
+    }
+
+    res.json({ conversationId, messages: conversation.messages });
+  } catch (err) {
+    console.error("Error fetching last conversation:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+/**
+ * Main chat endpoint:
+ * - handles starting/continuing conversations
+ * - handles saving workout plans
+ * - handles "goodbye" and "end conversation"
+ * - calls OpenAI and appends messages
+ */
+export async function askOpenAi(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
     const userId: number = req.body.userId;
     const userMessage: string = req.body.msg;
+    let conversationId: number | undefined = req.body.conversationId;
+
     if (!userId || !userMessage) {
       res.status(400).json({ error: "Missing userId or msg in request body" });
       return;
     }
 
-    // Handle "save this" command to save the last workout plan
-    if (userMessage.trim().toLowerCase() === "save this") {
-      const lastAssistantMsg = await getLastAssistantMessage(userId);
-      if (lastAssistantMsg) {
-        await saveWorkoutPlan(userId, lastAssistantMsg.content);
-        const confirmation = "✅ Your workout plan has been saved.";
-        // Optionally, save the confirmation message to the conversation history
-        await addMessage(userId, "assistant", confirmation);
-        res.json({ answer: confirmation });
+    const normalizedMsg = userMessage.trim().toLowerCase();
+    const isGoodbye = GOODBYE_KEYWORDS.some((kw) =>
+      normalizedMsg.includes(kw)
+    );
+    const isEnding = ENDING_KEYWORDS.some((kw) =>
+      normalizedMsg.includes(kw)
+    );
+
+    // 🛑 "end conversation"
+    if (isEnding) {
+      const recentConversationId = await getMostRecentConversationId(userId);
+      if (recentConversationId) {
+        const farewell =
+          "✅ Conversation ended. You can start a new one anytime by sending a new message.";
+        await appendToConversation(recentConversationId, [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: farewell },
+        ]);
+        await endConversation(recentConversationId);
+        res.json({ answer: farewell, conversationId: null });
       } else {
-        res.json({ answer: "⚠️ No workout plan found to save." });
+        res.json({
+          answer: "⚠️ No active conversation to end.",
+          conversationId: null,
+        });
       }
       return;
     }
 
-    // For a normal message, retrieve conversation history and build the message list
-    const historyMessages: ChatCompletionRequestMessage[] = await getChatHistory(userId);
-    const systemMessage: ChatCompletionRequestMessage = {
-      role: "system",
-      content: SYSTEM_PROMPT,
-    };
+    // 👋 Casual goodbyes
+    if (isGoodbye) {
+      const recentConversationId = await getMostRecentConversationId(userId);
+      if (recentConversationId) {
+        const goodbye =
+          "👋 Take care! Come back anytime if you need help with workouts.";
+        await appendToConversation(recentConversationId, [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: goodbye },
+        ]);
+        res.json({ answer: goodbye, conversationId: recentConversationId });
+      }
+      return;
+    }
 
-    // Build the messages array with the system prompt, history, and latest user message
-    const messagesForAI: ChatCompletionRequestMessage[] = [
-      systemMessage,
-      ...historyMessages,
-      { role: "user", content: userMessage }
+    // 🧠 Continue most recent or start new
+    if (!conversationId) {
+      conversationId =
+        (await getMostRecentConversationId(userId)) ?? undefined;
+    }
+    if (!conversationId) {
+      conversationId = await startConversation(userId, []);
+    }
+
+    // 💾 "save this" → save last assistant reply as workout plan
+    if (normalizedMsg === "save this") {
+      const convo = await getConversationById(conversationId);
+      const lastAssistantMsg = getLastAssistantMessageInConversation(
+        convo.messages
+      );
+      if (lastAssistantMsg) {
+        const planId = await saveWorkoutPlan(
+          userId,
+          lastAssistantMsg.content
+        );
+        await linkWorkoutPlanToConversation(conversationId, planId);
+        const confirmation = "✅ Your workout plan has been saved.";
+        await appendToConversation(conversationId, [
+          { role: "assistant", content: confirmation },
+        ]);
+        res.json({ answer: confirmation, conversationId });
+      } else {
+        res.json({
+          answer: "⚠️ No workout plan found to save.",
+          conversationId,
+        });
+      }
+      return;
+    }
+
+    // 🧠 Normal chat: pull last few messages, call OpenAI
+    const conversation = await getConversationById(conversationId);
+    const MAX_CONTEXT = 8;
+    const past = conversation.messages.slice(-MAX_CONTEXT);
+    const forAI: ChatCompletionRequestMessage[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...past,
+      { role: "user", content: userMessage },
     ];
 
-    // Get the assistant’s response from OpenAI
-    const aiResponse = await getChatResponse(messagesForAI);
+    const aiResponse = await getChatResponse(forAI);
 
-    // Save the new messages (user's message and assistant's answer) in the database
-    await addMessage(userId, "user", userMessage);
-    await addMessage(userId, "assistant", aiResponse);
+    // 💬 Append both user + assistant to JSONB
+    await appendToConversation(conversationId, [
+      { role: "user", content: userMessage },
+      { role: "assistant", content: aiResponse },
+    ]);
 
-    // Respond with the assistant's answer
-    res.json({ answer: aiResponse });
+    res.json({ answer: aiResponse, conversationId });
   } catch (err) {
     console.error("Error in askOpenAi:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
-export async function testOpenAi(req: Request, res: Response): Promise<void> {
-  try {
-    // Check both the request body and query parameters for the message
-    const userMessage: string = req.body.msg || req.query.msg;
-    if (!userMessage) {
-      res.status(400).json({ error: "Missing msg in request body or query parameters" });
-      return;
-    }
-
-    const systemMessage: ChatCompletionRequestMessage = {
-      role: "system",
-      content: SYSTEM_PROMPT,
-    };
-
-    const messagesForAI: ChatCompletionRequestMessage[] = [
-      systemMessage,
-      { role: "user", content: userMessage },
-    ];
-
-    const aiResponse = await getChatResponse(messagesForAI);
-    res.json({ answer: aiResponse });
-  } catch (err) {
-    console.error("Error in testOpenAi:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-
-

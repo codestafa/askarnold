@@ -15,10 +15,9 @@ export async function saveOrFetchUser(profile: any) {
   const [newUser] = await db('users')
   .insert({
     google_id: profile.id,
-    name: profile.displayName,
+    name: profile.displayName?.toLowerCase().replace(/\s+/g, '') || null,
     email: profile.email,
     picture: profile.photos?.[0]?.value || null,
-    username: profile.displayName?.toLowerCase().replace(/\s+/g, '') || null,
   })
   .returning('*');
 

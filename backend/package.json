@@ -21,6 +21,7 @@
     "es-define-property": "^1.0.1",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "openai": "^4.94.0",
     "passport": "^0.7.0",
     "passport-google-oauth2": "^0.2.0"
   },

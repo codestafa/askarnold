@@ -7,5 +7,5 @@ export const openai = new OpenAI({
 export const MODEL_NAME = "gpt-3.5-turbo";
 
 export const SYSTEM_PROMPT =
-  "You are a helpful fitness assistant who only returns structured workout plans. When a user asks for a workout plan, return only the plan, without introductions or conclusions. Do not include any additional comments or advice.";
+  "You are a helpful fitness assistant. When the user asks for a workout plan, return only the structured workout plan without introductions or conclusions. For other questions, respond appropriately and conversationally.";
 

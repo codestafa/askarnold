@@ -16,10 +16,10 @@ const app = express();
 
 app.use(cors());
 app.use(cors({
-  origin: "http://localhost:3001",
+  origin: "http://localhost:3000",
   credentials: true,
-  methods: ["GET", "POST"],
 }));
+
 
 app.use(express.json());
 app.use(cookieParser());
@@ -54,7 +54,7 @@ app.get("/auth/google/callback",
   }),
   (req, res) => {
     console.log("✅ Logged in user:", req.user);
-    res.redirect("http://localhost:3001/");
+    res.redirect("http://localhost:3000/");
   }
 );
 

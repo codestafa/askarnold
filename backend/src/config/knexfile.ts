@@ -16,7 +16,7 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME,
     },
     migrations: {
-      directory: path.resolve(__dirname, '../../migrations'),
+      directory: path.resolve(__dirname, '../../src/db/migrations'),
     },
     seeds: {
       directory: path.resolve(__dirname, '../../seeds'),

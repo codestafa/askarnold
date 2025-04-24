@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 function getPathnameFromUrl(headers: Headers) {
   const url = headers.get("x-url") || headers.get("referer") || "";
   try {
-    return new URL(url, "http://localhost:3001").pathname;
+    return new URL(url, "http://localhost:3000").pathname;
   } catch {
     return "";
   }
