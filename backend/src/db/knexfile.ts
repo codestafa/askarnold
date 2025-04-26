@@ -18,7 +18,7 @@ const knexfile = {
     connection: connectionString,
     searchPath: ['knex', 'public'],
     migrations: {
-      directory: '../db/migrations',
+      directory: '../migrations',
     },
     seeds: { directory: './data/seeds' },
   },
@@ -28,7 +28,7 @@ const knexfile = {
     connection: connectionString,
     searchPath: ['knex', 'public'],
     migrations: {
-      directory: '../db/migrations',
+      directory: '../migrations'
     },
     seeds: { directory: './data/seeds' },
   },
@@ -38,7 +38,7 @@ const knexfile = {
     connection: connectionString,
     searchPath: ['knex', 'public'],
     migrations: {
-      directory: '../db/migrations',
+      directory: '../migrations',
     },
     seeds: { directory: './data/seeds' },
   },

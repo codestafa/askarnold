@@ -6,44 +6,8 @@ import type { User } from "../../types/users";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "../../stories/Sidebar";
 import { MessageSquare } from "lucide-react";
+import { parseSections } from "../../lib/utils";
 
-// Helper to parse planText into sections, handles colon headers and Markdown bold headers
-function parseSections(planText: string) {
-  const rawLines = planText.split("\n");
-  const lines = rawLines
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0 && !/^remember to/i.test(l));
-
-  const sections: { title: string; items: string[] }[] = [];
-  let current = { title: "", items: [] as string[] };
-
-  lines.forEach((line) => {
-    // Markdown bold header e.g. **Day 1: Upper Body**
-    const mdHeader = line.match(/^\*\*(.+?)\*\*$/);
-    if (mdHeader) {
-      if (current.items.length || current.title) sections.push(current);
-      current = { title: mdHeader[1], items: [] };
-      return;
-    }
-
-    // Colon header e.g. Warm-up:
-    if (/[:：]$/.test(line)) {
-      if (current.items.length || current.title) sections.push(current);
-      current = { title: line.replace(/[:：]$/, ""), items: [] };
-      return;
-    }
-
-    // Regular item: strip bullets/numbering
-    const text = line.replace(/^[-\d\.\s]+/, "").trim();
-    if (text) current.items.push(text);
-  });
-
-  // push last
-  if (current.title || current.items.length) sections.push(current);
-  return sections;
-}
-
-// Child component: fetches workouts + renders formatted plan + pagination
 function WorkoutsContent({ user, limit }: { user: User; limit: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,18 +49,16 @@ function WorkoutsContent({ user, limit }: { user: User; limit: number }) {
           return (
             <div key={w.id} className="border bg-white p-6 rounded-lg shadow hover:shadow-md transition">
               <h5 className="text-xl font-semibold text-gray-900 mb-4">Workout #{w.id}</h5>
-
               {sections.map((sec, i) => (
                 <div key={i} className="mb-4">
                   {sec.title && <h6 className="text-gray-800 font-medium mb-2">{sec.title}</h6>}
-                  <ul className="list-disc list-inside ml-4 space-y-1 text-gray-700">
+                  <ul className="space-y-1 text-gray-700">
                     {sec.items.map((item, j) => (
-                      <li key={j}>{item}</li>
+                      <li key={j}>- {item}</li>
                     ))}
                   </ul>
                 </div>
               ))}
-
               <div className="flex justify-between items-center text-gray-400 text-xs">
                 <span>{new Date(w.createdAt).toLocaleDateString()}</span>
                 <button
@@ -111,8 +73,6 @@ function WorkoutsContent({ user, limit }: { user: User; limit: number }) {
           );
         })}
       </div>
-
-      {/* Pagination */}
       <div className="mt-8 flex justify-center space-x-4">
         <button
           onClick={() => goTo(currentPage - 1)}
@@ -133,7 +93,6 @@ function WorkoutsContent({ user, limit }: { user: User; limit: number }) {
   );
 }
 
-// Main page component
 export default function WorkoutsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -161,8 +120,7 @@ export default function WorkoutsPage() {
         <div>
           <h2 className="text-2xl font-semibold mb-2 text-gray-900">Desktop Only</h2>
           <p className="text-gray-600">
-            This site is optimized for desktop screens. Please switch to a
-            larger device for the best experience.
+            This site is optimized for desktop screens. Please switch to a larger device for the best experience.
           </p>
         </div>
       </div>

@@ -4,7 +4,7 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export const MODEL_NAME = "gpt-3.5-turbo";
+export const MODEL_NAME = "gpt-4.1";
 
 export const SYSTEM_PROMPT = `You are a helpful fitness assistant. When the user asks for a workout plan, return ONLY the structured plan in this exact format (no intros or conclusions), using as many days as needed:
 
