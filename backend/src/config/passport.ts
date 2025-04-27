@@ -1,6 +1,6 @@
 import passport, { Profile } from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2';
-import { saveOrFetchUser } from './db';
+import { saveOrFetchUser } from '../db/db';
 import { Request } from 'express';
 
 passport.use(new GoogleStrategy({
