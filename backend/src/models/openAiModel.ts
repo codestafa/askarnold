@@ -21,10 +21,14 @@ export async function getChatResponse(messages: ChatCompletionRequestMessage[]):
 }
 
 export async function saveWorkoutPlan(userId: number, planText: string): Promise<number> {
+  const user = await db("users").select("name").where({ id: userId }).first();
+  const readableName = `${user.name.split(" ")[0]}'s Plan - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+
   const [inserted] = await db("workout_plans")
     .insert({
       user_id: userId,
       plan_text: planText,
+      workout_name: readableName,
       created_at: new Date(),
     })
     .returning("id");
@@ -32,7 +36,6 @@ export async function saveWorkoutPlan(userId: number, planText: string): Promise
   return inserted.id ?? inserted;
 }
 
-// Optional: keep if you still want to log messages in a separate flat table
 export async function addMessage(
   userId: number,
   role: string,

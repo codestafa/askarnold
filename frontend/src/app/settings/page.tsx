@@ -14,9 +14,9 @@ export default function Settings() {
   const router = useRouter();
 
   const sections = [
-    { name: "chat", icon: "M3 9.5L12 3l9 6.5v9.5a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H3a2 2 0 01-2-2V9.5z" },
-    { name: "workouts", icon: "M15 12l-3-3m0 0l-3 3m3-3v12M5 12a7 7 0 0114 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4z" },
-    { name: "community", icon: "M3 5a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H9l-6 3V5z" },
+    { name: 'chat', icon: 'M3 9.5L12 3l9 6.5v9.5a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H3a2 2 0 01-2-2V9.5z' },
+    { name: 'workouts', icon: 'M15 12l-3-3m0 0l-3 3m3-3v12M5 12a7 7 0 0114 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4z' },
+    { name: 'community', icon: 'M3 5a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H9l-6 3V5z' },
   ];
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       setName(user.name || "");
-      setUsername(user.username || "");
+      setUsername(user.name || "");
     }
   }, [user]);
 
@@ -66,8 +66,8 @@ export default function Settings() {
             className="rounded-full w-24 h-24 object-cover border-4 border-gray-300"
           />
           <h2 className="text-2xl font-bold mt-4 text-gray-900">{user.name}</h2>
-          {user.username && (
-            <p className="text-gray-500">@{user.username}</p>
+          {user.name && (
+            <p className="text-gray-500">@{user.name}</p>
           )}
           <p className="text-gray-500 mt-2">{user.email}</p>
           <div className="mt-6 flex gap-4 w-full">

@@ -32,11 +32,12 @@ export async function startConversation(
  */
 export async function getConversationById(
   conversationId: number
-): Promise<{ id: number; messages: Message[]; ended_at: Date | null }> {
+): Promise<{ id: number; user_id: number; messages: Message[]; ended_at: Date | null }> {
   const convo = await db("conversations")
-    .select("id", "messages", "ended_at")
+    .select("id", "user_id", "messages", "ended_at")
     .where({ id: conversationId })
     .first();
+
   if (!convo) {
     throw new Error(`Conversation ${conversationId} not found`);
   }
@@ -53,10 +54,12 @@ export async function getConversationById(
 
   return {
     id: convo.id,
+    user_id: convo.user_id,
     messages: parsed,
     ended_at: convo.ended_at,
   };
 }
+
 
 /**
  * Append new messages to the JSONB array.
