@@ -8,13 +8,15 @@ import passport from "passport";
 import { db } from './db/db';
 import "./config/passport";
 import cookieParser from "cookie-parser";
+import communityRoutes from './routes/communityRoutes';
+import uploadRoutes from './routes/uploadRoutes';
+
 
 dotenv.config();
 
 
 const app = express();
 
-app.use(cors());
 app.use(cors({
   origin: "http://localhost:3000",
   credentials: true,
@@ -42,6 +44,10 @@ app.get("/", (req: Request, res: Response) => {
 
 // Mount the AI assistant routes
 app.use("/", openAiRoutes);
+
+app.use('/api', communityRoutes);
+
+app.use('/api', uploadRoutes);
 
 // 🔐 Google Auth Routes
 app.get("/auth/google",
