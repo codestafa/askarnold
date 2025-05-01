@@ -6,6 +6,9 @@ import passport from "passport";
 import cookieParser from "cookie-parser";
 import openAiRoutes from "./routes/openAiRoutes";
 import "./config/passport";
+import communityRoutes from './routes/communityRoutes';
+import uploadRoutes from './routes/uploadRoutes';
+
 
 dotenv.config();
 
@@ -39,8 +42,12 @@ app.get("/", (_req: Request, res: Response) => {
 
 app.use("/", openAiRoutes);
 
-app.get(
-  "/auth/google",
+app.use('/api', communityRoutes);
+
+app.use('/api', uploadRoutes);
+
+// 🔐 Google Auth Routes
+app.get("/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
