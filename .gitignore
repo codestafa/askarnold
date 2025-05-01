@@ -1,1 +1,10 @@
+# macOS
 .DS_Store
+
+# Environment Variables
+.env
+.env.*
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
