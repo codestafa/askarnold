@@ -1,110 +1,22 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import type { Workout } from "../../types/workout";
 import type { User } from "../../types/users";
-import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "../../stories/Sidebar";
-import { MessageSquare } from "lucide-react";
 import { parseSections } from "../../lib/utils";
 
-function WorkoutsContent({ user, limit }: { user: User; limit: number }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const currentPage = parseInt(searchParams.get("page") || "0", 10);
-
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/workouts/user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ userId: user.id, offset: currentPage * limit, limit: limit + 1 }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Fetch error");
-        return res.json();
-      })
-      .then((data: { workouts: Workout[] }) => {
-        setHasMore(data.workouts.length > limit);
-        setWorkouts(data.workouts.slice(0, limit));
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user, currentPage, limit]);
-
-  const goTo = (page: number) => router.push(`/workouts?page=${page}`);
-
-  if (loading) return <div className="p-4">Loading workouts…</div>;
-
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-6">
-        {workouts.map((w) => {
-          const sections = parseSections(w.planText);
-          return (
-            <div key={w.id} className="border bg-white p-6 rounded-lg shadow hover:shadow-md transition">
-              <h5 className="text-xl font-semibold text-gray-900 mb-4">Workout #{w.id}</h5>
-              {sections.map((sec, i) => (
-                <div key={i} className="mb-4">
-                  {sec.title && <h6 className="text-gray-800 font-medium mb-2">{sec.title}</h6>}
-                  <ul className="space-y-1 text-gray-700">
-                    {sec.items.map((item, j) => (
-                      <li key={j}>- {item}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-              <div className="flex justify-between items-center text-gray-400 text-xs">
-                <span>{new Date(w.createdAt).toLocaleDateString()}</span>
-                <button
-                  onClick={() => alert(`Tracking progress for #${w.id}`)}
-                  className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
-                >
-                  Track
-                  <MessageSquare className="w-4 h-4 ml-1" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-8 flex justify-center space-x-4">
-        <button
-          onClick={() => goTo(currentPage - 1)}
-          disabled={currentPage === 0}
-          className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50 transition"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => goTo(currentPage + 1)}
-          disabled={!hasMore}
-          className="px-5 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50 transition"
-        >
-          Next
-        </button>
-      </div>
-    </>
-  );
-}
+const CardWrapper = ({ children }: { children: React.ReactNode }) => (
+  <div className="bg-white p-5 rounded-xl shadow-md flex flex-col min-h-[400px] sm:min-h-[500px] xl:min-h-[550px]">
+    {children}
+  </div>
+);
 
 export default function WorkoutsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
-  const limit = 4;
-
-  useEffect(() => {
-    const check = () => setIsDesktop(window.innerWidth >= 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   useEffect(() => {
     fetch("http://localhost:8000/auth/me", { credentials: "include" })
@@ -113,19 +25,8 @@ export default function WorkoutsPage() {
       .catch(() => router.push("/login"));
   }, [router]);
 
-  if (isDesktop === null) return null;
-  if (!isDesktop)
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 p-4 text-center">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2 text-gray-900">Desktop Only</h2>
-          <p className="text-gray-600">
-            This site is optimized for desktop screens. Please switch to a larger device for the best experience.
-          </p>
-        </div>
-      </div>
-    );
-  if (!user) return <div className="p-4">Loading user…</div>;
+  if (!user)
+    return <div className="p-4 text-center text-gray-800">Loading user…</div>;
 
   const sections = [
     { name: "chat", icon: "M3 9.5L12 3l9 6.5v9.5a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H3a2 2 0 01-2-2V9.5z" },
@@ -134,16 +35,214 @@ export default function WorkoutsPage() {
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="min-h-screen bg-white text-gray-800 lg:flex">
       <Sidebar sections={sections} user={{ name: user.name, image: user.picture }} />
-      <main className="flex-1 overflow-auto bg-gray-50 p-6">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6 text-gray-900">Your Workouts</h1>
-          <Suspense fallback={<div>Loading workouts…</div>}>
-            <WorkoutsContent user={user} limit={limit} />
-          </Suspense>
-        </div>
+      <main className="flex-1 bg-gray-50 text-gray-800 px-4 py-5 sm:px-6 md:px-8">
+        <h1 className="text-3xl font-bold mb-6">{user.name}’s Workouts</h1>
+        <WorkoutsContent limit={6} currentUserName={user.name} />
       </main>
     </div>
+  );
+}
+
+function WorkoutsContent({
+  limit,
+  currentUserName,
+}: {
+  limit: number;
+  currentUserName: string;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const page = parseInt(searchParams.get("page") || "0", 10);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [mainWorkoutId, setMainWorkoutId] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/workouts/user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ offset: page * limit, limit: limit + 1 }),
+    })
+      .then((r) => r.json())
+      .then((data: { workouts: Workout[]; mainWorkoutId: number | null }) => {
+        const fetched = data.workouts || [];
+        setWorkouts(fetched.slice(0, limit));
+        setHasMore(fetched.length > limit);
+        setMainWorkoutId(data.mainWorkoutId);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch workouts:", err);
+        setWorkouts([]);
+        setHasMore(false);
+      })
+      .finally(() => setLoading(false));
+  }, [page, limit]);
+
+  const deleteWorkout = async () => {
+    if (!confirmDelete) return;
+    try {
+      const res = await fetch(`/api/workouts/${confirmDelete}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setWorkouts((prev) => prev.filter((w) => w.id !== confirmDelete));
+        if (confirmDelete === mainWorkoutId) setMainWorkoutId(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
+  const toggleMain = async (id: number) => {
+    try {
+      const res = await fetch("/api/workouts/set-main", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ workoutId: id }),
+      });
+      if (res.ok) {
+        const { message } = await res.json();
+        setMainWorkoutId(message.includes("unset") ? null : id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (loading) return <div className="p-4 text-center text-gray-800">Loading…</div>;
+
+  if (workouts.length === 0)
+    return (
+      <div className="flex flex-col items-center justify-center mt-12 text-gray-700">
+        <div className="text-5xl mb-4">🤖</div>
+        <h2 className="text-2xl font-semibold mb-2 text-gray-900">No workout plans yet!</h2>
+        <p className="mb-6 text-center text-gray-600">
+          Chat with <span className="font-semibold text-blue-600">Arny</span> to get started.
+        </p>
+        <button
+          onClick={() => router.push("/chat")}
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+        >
+          Chat with Arny
+        </button>
+      </div>
+    );
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 w-full max-w-screen-xl mx-auto">
+        {workouts.map((w) => {
+          const parts = parseSections(w.planText);
+          const isMain = w.id === mainWorkoutId;
+          const isAdopted = w.adopted === true;
+          const title = w.workoutName ?? `${currentUserName}’s Workout #${w.id}`;
+          const date = new Date(w.createdAt);
+          const dateText = isNaN(date.getTime()) ? "" : date.toLocaleDateString();
+
+          return (
+            <CardWrapper key={w.id}>
+              <div className="flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-base font-semibold text-gray-900">{title}</span>
+                      {isAdopted && (
+                        <span className="text-xs font-medium px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full border border-indigo-300">
+                          Adopted
+                        </span>
+                      )}
+                      {isMain && (
+                        <span className="text-xs font-medium text-yellow-500">⭐ Main</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => toggleMain(w.id)}
+                        className={`px-3 py-1 rounded text-xs font-medium transition ${
+                          isMain
+                            ? "bg-yellow-400 hover:bg-yellow-500 text-black"
+                            : "bg-blue-500 hover:bg-blue-600 text-white"
+                        }`}
+                      >
+                        {isMain ? "Unselect Main" : "Make Main"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(w.id)}
+                        className="text-xs px-2 py-1 border border-gray-300 text-gray-600 hover:text-red-600 hover:border-red-500 rounded transition"
+                        title="Delete workout"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {parts.map((sec, i) => (
+                    <div key={i} className="mb-3">
+                      {sec.title && <h6 className="font-medium mb-1">{sec.title}</h6>}
+                      <ul className="text-sm space-y-1 text-gray-700">
+                        {sec.items.map((item, j) => (
+                          <li key={j} className="pl-2 border-l-4 border-blue-500">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-500 mt-2">{dateText}</span>
+              </div>
+            </CardWrapper>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-center gap-4 mt-8">
+        <button
+          onClick={() => page > 0 && router.push(`/workouts?page=${page - 1}`)}
+          disabled={page === 0}
+          className="px-5 py-2 bg-gray-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        <button
+          onClick={() => hasMore && router.push(`/workouts?page=${page + 1}`)}
+          disabled={!hasMore}
+          className="px-5 py-2 bg-blue-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+
+      {confirmDelete !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg w-[90%] max-w-sm">
+            <h3 className="text-xl font-semibold text-center mb-4">Delete Workout?</h3>
+            <p className="text-sm text-center text-gray-600 mb-6">This action cannot be undone.</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteWorkout}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

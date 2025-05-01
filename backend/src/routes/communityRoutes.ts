@@ -36,14 +36,13 @@ router.get('/posts', (async (req, res) => {
 
 // POST /posts - create a new post
 router.post("/posts", (async (req, res) => {
-  const user = req.user as { id: number } | undefined;
-
-  if (!user || typeof user.id !== 'number') {
+  const user = req.session.userId;
+  if (!user || typeof user !== 'number') {
     return res.status(401).json({ error: "Not authenticated or invalid user ID" });
   }
 
   const { content, image_url } = req.body;
-  const user_id = user.id;
+  const user_id = user;
 
   try {
     const [newPost] = await db('posts')

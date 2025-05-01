@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '../stories/Sidebar';
-import { User } from '../types/users'
+import { User } from '../types/users';
+import "../../src/app/globals.css";
 
 export default function HomePage() {
   const router = useRouter();
@@ -36,11 +37,27 @@ export default function HomePage() {
   if (loading || !user) return null;
 
   return (
-    <div className="flex">
-      <Sidebar sections={sections} user={{ name: user.username || user.name || "Unknown", image: user.picture }} />
-      <main className="flex-1 p-6">
-        <h1 className="text-2xl font-bold">Welcome to Ask Arny</h1>
-        <p className="mt-2 text-gray-600">Select an option from the sidebar.</p>
+    <div className="flex bg-white min-h-screen">
+      <Sidebar sections={sections} user={{ name: user.name || user.name || "Unknown", image: user.picture }} />
+      <main className="flex-1 p-10 flex flex-col justify-center items-center text-center bg-gray-50">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Welcome to Ask Arny</h1>
+        <p className="text-lg text-gray-700 max-w-2xl mb-6">
+          Your personalized fitness companion. Whether you are looking for workout plans, need help from an AI coach, or want to connect with a fitness community — Ask Arny has your back.
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push('/chat')}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
+            Chat with Arny
+          </button>
+          <button
+            onClick={() => router.push('/workouts')}
+            className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition"
+          >
+            View Workouts
+          </button>
+        </div>
       </main>
     </div>
   );

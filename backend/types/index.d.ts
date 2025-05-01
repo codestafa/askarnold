@@ -1,4 +1,5 @@
-import { Profile } from 'passport';
+import "express-session";
+import { Profile } from "passport";
 
 declare global {
   namespace Express {
@@ -10,5 +11,3 @@ declare global {
     }
   }
 }
-
-export {};

@@ -43,7 +43,9 @@ export default function CommunityPage() {
   }, [router]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/posts")
+    fetch("http://localhost:8000/api/posts", {
+      credentials: "include",
+    })
       .then(res => res.json())
       .then(setPosts)
       .catch((error) => console.error('Error fetching posts:', error))
@@ -115,6 +117,7 @@ export default function CommunityPage() {
                     headers: {
                       "Content-Type": "application/json",
                     },
+                    credentials: "include",
                     body: JSON.stringify({
                       user_id: user.id,
                       content,
@@ -215,6 +218,7 @@ export default function CommunityPage() {
                         const res = await fetch(`http://localhost:8000/api/posts/${post.id}/like`, {
                           method,
                           headers: { 'Content-Type': 'application/json' },
+                          credentials: "include",
                           body: JSON.stringify({ user_id: user.id }),
                         });
 

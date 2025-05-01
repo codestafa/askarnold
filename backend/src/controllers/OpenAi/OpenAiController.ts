@@ -1,52 +1,34 @@
 import { Request, Response } from "express";
-import { getChatResponse, saveWorkoutPlan } from "../../models/openAiModel";
+import { getChatResponse } from "../../models/openAiModel";
 import {
   startConversation,
   appendToConversation,
   getConversationById,
-  getLastAssistantMessageInConversation,
-  linkWorkoutPlanToConversation,
   getMostRecentConversationId,
-  endConversation,
+  linkWorkoutPlanToConversation,
+  endConversation
 } from "../../models/conversationModel";
+import { saveWorkoutPlan } from "../../models/openAiModel";
 import { SYSTEM_PROMPT } from "../../config/openai/config";
 import { ChatCompletionRequestMessage } from "../../../types/openai";
+import { detectIntent } from "../../services/intentService";
 
-const GOODBYE_KEYWORDS = [
-  "goodbye",
-  "bye",
-  "see you",
-  "talk to you later",
-  "later",
-  "cya",
-];
-const ENDING_KEYWORDS = ["end conversation", "let's end this conversation"];
-
-/**
- * Fetch the user's most recent active conversation (if any).
- */
-export async function getLastConversation(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function getLastConversation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = req.body.userId;
+    console.log(req.session);
+    const userId = req.session.userId;
     if (!userId) {
-      res.status(400).json({ error: "Missing userId in request body" });
+      res.status(401).json({ error: "Unauthorized" });
       return;
     }
 
     const conversationId = await getMostRecentConversationId(userId);
-    console.log(conversationId)
     if (!conversationId) {
       res.json({ conversationId: null, messages: [] });
       return;
     }
 
     const conversation = await getConversationById(conversationId);
-    console.log(conversation)
-
-    // If they've explicitly ended it, treat as "no active"
     if (conversation.ended_at) {
       res.json({ conversationId: null, messages: [] });
       return;
@@ -59,127 +41,96 @@ export async function getLastConversation(
   }
 }
 
-/**
- * Main chat endpoint:
- * - handles starting/continuing conversations
- * - handles saving workout plans
- * - handles "goodbye" and "end conversation"
- * - calls OpenAI and appends messages
- */
-export async function askOpenAi(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function askOpenAi(req: Request, res: Response): Promise<void> {
   try {
-    const userId: number = req.body.userId;
-    const userMessage: string = req.body.msg;
-    let conversationId: number | undefined = req.body.conversationId;
+    const userId = req.session.userId;
+    console.log(req.session);
+    const { msg, conversationId: reqConvoId } = req.body;
 
-    if (!userId || !userMessage) {
-      res.status(400).json({ error: "Missing userId or msg in request body" });
+    if (!userId || !msg) {
+      res.status(400).json({ error: "Missing msg or not authenticated" });
       return;
     }
 
-    const normalizedMsg = userMessage.trim().toLowerCase();
-    const isGoodbye = GOODBYE_KEYWORDS.some((kw) =>
-      normalizedMsg.includes(kw)
-    );
-    const isEnding = ENDING_KEYWORDS.some((kw) =>
-      normalizedMsg.includes(kw)
-    );
-
-    // 🛑 "end conversation"
-    if (isEnding) {
-      const recentConversationId = await getMostRecentConversationId(userId);
-      if (recentConversationId) {
-        const farewell =
-          "✅ Conversation ended. You can start a new one anytime by sending a new message.";
-        await appendToConversation(recentConversationId, [
-          { role: "user", content: userMessage },
-          { role: "assistant", content: farewell },
-        ]);
-        await endConversation(recentConversationId);
-        res.json({ answer: farewell, conversationId: null });
-      } else {
-        res.json({
-          answer: "⚠️ No active conversation to end.",
-          conversationId: null,
-        });
-      }
-      return;
-    }
-
-    // 👋 Casual goodbyes
-    if (isGoodbye) {
-      const recentConversationId = await getMostRecentConversationId(userId);
-      if (recentConversationId) {
-        const goodbye =
-          "👋 Take care! Come back anytime if you need help with workouts.";
-        await appendToConversation(recentConversationId, [
-          { role: "user", content: userMessage },
-          { role: "assistant", content: goodbye },
-        ]);
-        res.json({ answer: goodbye, conversationId: recentConversationId });
-      }
-      return;
-    }
-
-    // 🧠 Continue most recent or start new
-    if (!conversationId) {
-      conversationId =
-        (await getMostRecentConversationId(userId)) ?? undefined;
-    }
+    let conversationId = reqConvoId ?? await getMostRecentConversationId(userId);
     if (!conversationId) {
       conversationId = await startConversation(userId, []);
     }
 
-    // 💾 "save this" → save last assistant reply as workout plan
-    if (normalizedMsg === "save this") {
-      const convo = await getConversationById(conversationId);
-      const lastAssistantMsg = getLastAssistantMessageInConversation(
-        convo.messages
-      );
-      if (lastAssistantMsg) {
-        const planId = await saveWorkoutPlan(
-          userId,
-          lastAssistantMsg.content
-        );
-        await linkWorkoutPlanToConversation(conversationId, planId);
-        const confirmation = "✅ Your workout plan has been saved.";
-        await appendToConversation(conversationId, [
-          { role: "assistant", content: confirmation },
-        ]);
-        res.json({ answer: confirmation, conversationId });
-      } else {
-        res.json({
-          answer: "⚠️ No workout plan found to save.",
-          conversationId,
-        });
-      }
-      return;
-    }
-
-    // 🧠 Normal chat: pull last few messages, call OpenAI
-    const conversation = await getConversationById(conversationId);
-    const MAX_CONTEXT = 8;
-    const past = conversation.messages.slice(-MAX_CONTEXT);
+    const convo = await getConversationById(conversationId);
+    const past = convo.messages.slice(-8);
     const forAI: ChatCompletionRequestMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       ...past,
-      { role: "user", content: userMessage },
+      { role: "user", content: msg },
     ];
 
     const aiResponse = await getChatResponse(forAI);
 
-    // 💬 Append both user + assistant to JSONB
+    const intent = await detectIntent(aiResponse);
+    console.log("Assistant Response:", aiResponse);
+    console.log("Detected Intent:", intent);
+
     await appendToConversation(conversationId, [
-      { role: "user", content: userMessage },
+      { role: "user", content: msg },
       { role: "assistant", content: aiResponse },
     ]);
 
-    res.json({ answer: aiResponse, conversationId });
+    res.json({ answer: aiResponse, conversationId, intent });
   } catch (err) {
     console.error("Error in askOpenAi:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function saveWorkoutPlanHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.session.userId;
+    const { conversationId } = req.body;
+
+    if (!userId || !conversationId) {
+      res.status(400).json({ error: "Missing conversationId or not authenticated" });
+      return;
+    }
+
+    const convo = await getConversationById(conversationId);
+    const lastAssistantMsg = convo.messages.reverse().find(m => m.role === "assistant");
+
+    if (!lastAssistantMsg) {
+      res.status(400).json({ error: "No assistant message to save" });
+      return;
+    }
+
+    const planId = await saveWorkoutPlan(userId, lastAssistantMsg.content);
+    await linkWorkoutPlanToConversation(conversationId, planId);
+
+    res.json({ success: true, message: "Workout plan saved successfully", planId });
+  } catch (err) {
+    console.error("Error saving workout plan:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function endConversationHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.session.userId;
+    const { conversationId } = req.body;
+
+    if (!userId || !conversationId) {
+      res.status(400).json({ error: "Missing conversationId or not authenticated" });
+      return;
+    }
+
+    const convo = await getConversationById(conversationId);
+    if (convo.user_id !== userId) {
+      res.status(403).json({ error: "You do not own this conversation" });
+      return;
+    }
+
+    await endConversation(conversationId);
+    res.json({ message: "Conversation ended successfully" });
+  } catch (err) {
+    console.error("Error ending conversation:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
