@@ -8,6 +8,7 @@ import openAiRoutes from "./routes/openAiRoutes";
 import "./config/passport";
 import communityRoutes from './routes/communityRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import commentRoutes from "./routes/commentRoutes";
 
 
 dotenv.config();
@@ -43,6 +44,8 @@ app.get("/", (_req: Request, res: Response) => {
 app.use("/", openAiRoutes);
 
 app.use('/api', communityRoutes);
+
+app.use('/api', commentRoutes);
 
 app.use('/api', uploadRoutes);
 
