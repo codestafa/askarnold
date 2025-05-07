@@ -8,9 +8,9 @@ dotenv.config({ path: envPath });
 
 
 
-const { DB_USER, DB_PASSWORD, DB_NAME } = process.env;
+const { DB_USER, DB_PASSWORD, DB_NAME, DB_HOST } = process.env;
 
-const connectionString = `postgres://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}`;
+const connectionString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}`;
 
 const knexfile = {
   development: {

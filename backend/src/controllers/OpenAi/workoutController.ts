@@ -5,9 +5,10 @@ import {
   checkWorkoutOwnership,
   getUserById,
   updateUserMainWorkout,
-  getWorkoutsForUser,
   isAdoptedByUser,
   unadoptWorkoutPlan,
+  getWorkoutsForUser,
+  isWorkoutAdopted
 } from "../../models/workoutModel";
 
 /**
@@ -133,6 +134,13 @@ export async function adoptWorkout(req: Request, res: Response): Promise<void> {
 
     if (!userId || typeof workoutId !== "number") {
       res.status(400).json({ error: "Missing or invalid workoutId or not authenticated" });
+      return;
+    }
+
+    // 💥 Prevent adoption of already-adopted workouts
+    const adopted = await isWorkoutAdopted(workoutId);
+    if (adopted) {
+      res.status(400).json({ error: "Cannot adopt a workout that is already adopted" });
       return;
     }
 
