@@ -55,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, user }) => {
 
           <nav className="space-y-2 flex-1">
             {sections.map((item, index) => {
-              const link = `/${item.name}`;
+              const link = item.name === 'About' ? '/' : `/${item.name}`;
               const isActive = pathname === link;
               return (
                 <a
@@ -98,11 +98,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, user }) => {
             </a>
           </nav>
 
-          <form action="http://localhost:8000/logout" method="POST" className="pt-4 border-t border-gray-200 mt-4">
-            <button type="submit" className="text-sm text-red-600 hover:text-red-400 transition w-full text-left">
-              Logout
-            </button>
-          </form>
         </div>
       </aside>
     </>

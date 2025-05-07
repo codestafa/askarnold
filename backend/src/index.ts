@@ -9,8 +9,8 @@ import "./config/passport";
 import communityRoutes from './routes/communityRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import commentRoutes from "./routes/commentRoutes";
-
-
+import axios from "axios";
+import {db} from "../src/db/db"; // adjust path to your actual knex instance
 dotenv.config();
 
 const app = express();
@@ -106,6 +106,59 @@ app.post("/logout", (req: Request, res: Response) => {
     res.status(200).json({ message: "Logged out" });
   });
 });
+
+app.get("/server_info", async (_req: Request, res: Response) => {
+  try {
+    const { data: server_geodata } = await axios.get("https://ipwhois.app/json/");
+
+    let dbInfo = {
+      connected: false,
+      version: null as string | null,
+      tables: [] as string[],
+    };
+
+    try {
+      const versionResult = await db.raw("SELECT version();");
+      const tablesResult = await db.raw(`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_type = 'BASE TABLE';
+      `);
+
+      dbInfo = {
+        connected: true,
+        version: versionResult.rows?.[0]?.version || "unknown",
+        tables: tablesResult.rows.map((row: any) => row.table_name),
+      };
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error("Database connection failed:", err.message);
+      } else {
+        console.error("Database connection failed:", err);
+      }
+    }
+
+    const server_info = {
+      server_geodata,
+      settings: {
+        env: process.env.NODE_ENV || "development",
+        appName: "MyNodeApp",
+        nodeVersion: process.version,
+        platform: process.platform,
+        memoryUsage: process.memoryUsage(),
+      },
+      database: dbInfo,
+    };
+
+    res.json(server_info);
+  } catch (error) {
+    console.error("Failed to fetch server_info:", error);
+    res.status(500).json({ error: "Could not retrieve server info." });
+  }
+});
+
+
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

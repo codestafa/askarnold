@@ -29,9 +29,10 @@ export default function WorkoutsPage() {
     return <div className="p-4 text-center text-gray-800">Loading user…</div>;
 
   const sections = [
-    { name: "chat", icon: "M3 9.5L12 3l9 6.5v9.5a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H3a2 2 0 01-2-2V9.5z" },
-    { name: "workouts", icon: "M15 12l-3-3m0 0l-3 3m3-3v12M5 12a7 7 0 0114 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4z" },
-    { name: "community", icon: "M3 5a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H9l-6 3V5z" },
+    { name: 'About', icon: 'M3 9.5L12 3l9 6.5v9.5a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H3a2 2 0 01-2-2V9.5z' },
+    { name: 'chat', icon: 'M3 5a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H9l-6 3V5z' },
+    { name: 'workouts', icon: 'M15 12l-3-3m0 0l-3 3m3-3v12M5 12a7 7 0 0114 0v4a2 2 0 01-2 2H7a2 2 0 01-2-2v-4z' },
+    { name: 'community', icon: 'M16 14a4 4 0 10-8 0v2h8v-2zm-4-6a2 2 0 110-4 2 2 0 010 4z' }
   ];
 
   return (
@@ -71,9 +72,8 @@ function WorkoutsContent({
     })
       .then((r) => r.json())
       .then((data: { workouts: Workout[]; mainWorkoutId: number | null }) => {
-        const fetched = data.workouts || [];
-        setWorkouts(fetched.slice(0, limit));
-        setHasMore(fetched.length > limit);
+        setWorkouts(data.workouts.slice(0, limit));
+        setHasMore(data.workouts.length > limit);
         setMainWorkoutId(data.mainWorkoutId);
       })
       .catch((err) => {
@@ -84,21 +84,18 @@ function WorkoutsContent({
       .finally(() => setLoading(false));
   }, [page, limit]);
 
-  const deleteWorkout = async () => {
-    if (!confirmDelete) return;
+  const unadoptWorkout = async (id: number) => {
     try {
-      const res = await fetch(`/api/workouts/${confirmDelete}`, {
+      const res = await fetch(`/api/workouts/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
       if (res.ok) {
-        setWorkouts((prev) => prev.filter((w) => w.id !== confirmDelete));
-        if (confirmDelete === mainWorkoutId) setMainWorkoutId(null);
+        setWorkouts((prev) => prev.filter((w) => w.id !== id));
+        if (id === mainWorkoutId) setMainWorkoutId(null);
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setConfirmDelete(null);
     }
   };
 
@@ -121,13 +118,13 @@ function WorkoutsContent({
 
   if (loading) return <div className="p-4 text-center text-gray-800">Loading…</div>;
 
-  if (workouts.length === 0)
+  if (workouts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center mt-12 text-gray-700">
         <div className="text-5xl mb-4">🤖</div>
         <h2 className="text-2xl font-semibold mb-2 text-gray-900">No workout plans yet!</h2>
         <p className="mb-6 text-center text-gray-600">
-          Chat with <span className="font-semibold text-blue-600">Arny</span> to get started.
+          Chat with <span className="font-semibold text-blue-600">Arny</span> to get started!
         </p>
         <button
           onClick={() => router.push("/chat")}
@@ -137,6 +134,7 @@ function WorkoutsContent({
         </button>
       </div>
     );
+  }
 
   return (
     <>
@@ -146,8 +144,7 @@ function WorkoutsContent({
           const isMain = w.id === mainWorkoutId;
           const isAdopted = w.adopted === true;
           const title = w.workoutName ?? `${currentUserName}’s Workout #${w.id}`;
-          const date = new Date(w.createdAt);
-          const dateText = isNaN(date.getTime()) ? "" : date.toLocaleDateString();
+          const dateText = new Date(w.createdAt).toLocaleDateString();
 
           return (
             <CardWrapper key={w.id}>
@@ -176,13 +173,22 @@ function WorkoutsContent({
                       >
                         {isMain ? "Unselect Main" : "Make Main"}
                       </button>
-                      <button
-                        onClick={() => setConfirmDelete(w.id)}
-                        className="text-xs px-2 py-1 border border-gray-300 text-gray-600 hover:text-red-600 hover:border-red-500 rounded transition"
-                        title="Delete workout"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {isAdopted ? (
+                        <button
+                          onClick={() => unadoptWorkout(w.id)}
+                          className="px-3 py-1 text-xs font-medium border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition"
+                        >
+                          Unadopt
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDelete(w.id)}
+                          className="text-xs px-2 py-1 border border-gray-300 text-gray-600 hover:text-red-600 hover:border-red-500 rounded transition"
+                          title="Delete workout"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -191,7 +197,9 @@ function WorkoutsContent({
                       {sec.title && <h6 className="font-medium mb-1">{sec.title}</h6>}
                       <ul className="text-sm space-y-1 text-gray-700">
                         {sec.items.map((item, j) => (
-                          <li key={j} className="pl-2 border-l-4 border-blue-500">{item}</li>
+                          <li key={j} className="pl-2 border-l-4 border-blue-500">
+                            {item}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -234,7 +242,7 @@ function WorkoutsContent({
                 Cancel
               </button>
               <button
-                onClick={deleteWorkout}
+                onClick={() => unadoptWorkout(confirmDelete)}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
               >
                 Delete

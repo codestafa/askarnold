@@ -12,6 +12,7 @@ import {
   adoptWorkout,
   setMainWorkout,
 } from "../controllers/OpenAi/workoutController";
+import { getUserById } from "../controllers/OpenAi/userController";
 
 const router = Router();
 
@@ -25,4 +26,5 @@ router.delete("/workouts/:id", deleteWorkout);
 router.post("/workouts/adopt", adoptWorkout);
 router.post("/workouts/set-main", setMainWorkout);
 
+router.get("/user/:userId", getUserById); // 👈 added user profile route
 export default router;

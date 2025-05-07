@@ -26,18 +26,16 @@ const nextConfig: NextConfig = {
       { source: "/api/workouts/:id",      destination: "http://localhost:8000/workouts/:id" },
       { source: "/api/workouts/set-main", destination: "http://localhost:8000/workouts/set-main" },
 
-      {
-        source: "/api/posts/:postId/comments",
-        destination: "http://localhost:8000/api/posts/:postId/comments",
-      },
-      {
-        source: "/api/comments/:commentId",
-        destination: "http://localhost:8000/api/comments/:commentId",
-      },
-      {
-        source: "/auth/me",
-        destination: "http://localhost:8000/auth/me",
-      },
+      { source: "/api/posts",                  destination: "http://localhost:8000/api/posts" },
+      { source: "/api/posts/:postId",          destination: "http://localhost:8000/api/posts/:postId" },
+      { source: "/api/posts/:postId/like",     destination: "http://localhost:8000/api/posts/:postId/like" },
+      { source: "/api/posts/:postId/comments", destination: "http://localhost:8000/api/posts/:postId/comments" },
+
+      { source: "/api/comments/:commentId", destination: "http://localhost:8000/api/comments/:commentId" },
+      { source: "/api/upload",              destination: "http://localhost:8000/api/upload" },
+
+      { source: "/auth/me", destination: "http://localhost:8000/auth/me" },
+      { source: "/api/user/:userId", destination: "http://localhost:8000/user/:userId" },
     ];
   },
 };
