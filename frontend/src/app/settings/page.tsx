@@ -8,9 +8,6 @@ import {User} from "../../types/users"
 export default function Settings() {
   const [user, setUser] = useState<User | null>();
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
   const router = useRouter();
 
   const sections = [
@@ -35,13 +32,6 @@ export default function Settings() {
       router.replace('/login');
     }
   }, [loading, user, router]);
-
-  useEffect(() => {
-    if (user) {
-      setName(user.name || "");
-      setUsername(user.name || "");
-    }
-  }, [user]);
 
   const handleLogout = async () => {
     setUser(null);
@@ -70,13 +60,7 @@ export default function Settings() {
             <p className="text-gray-500">@{user.name}</p>
           )}
           <p className="text-gray-500 mt-2">{user.email}</p>
-          <div className="mt-6 flex gap-4 w-full">
-          <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            >
-              Edit Profile
-            </button>
+          <div className="mt-6 w-full flex justify-center">
             <button
               onClick={handleLogout}
               className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
@@ -86,45 +70,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md text-gray-900">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Edit Profile</h3>
-
-            <input
-              type="text"
-              placeholder="Name"
-              className="w-full mb-3 px-4 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Username"
-              className="w-full mb-3 px-4 py-2 border border-gray-300 rounded text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-                onClick={() => setIsModalOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={() => {
-                  // Save logic
-                  setIsModalOpen(false);
-                }}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
